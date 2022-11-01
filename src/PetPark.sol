@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.17;
 
 contract PetPark {
 
-    address owner;
+    address immutable owner;
 
     enum AnimalType {
         None,
@@ -25,8 +25,8 @@ contract PetPark {
         AnimalType animalType;
     }
 
-    uint[6] totalPetCount;
-    uint[6] availablePetCount;
+    mapping(AnimalType => uint) totalPetCount;
+    mapping(AnimalType => uint) availablePetCount;
     mapping(address => Borrower) borrowers;
 
     event Added(AnimalType animalType, uint256 count);
@@ -41,8 +41,8 @@ contract PetPark {
         require(msg.sender == owner, "Only owner can add pets");
         require(_animalType != AnimalType.None, "Invalid animal");
 
-        totalPetCount[uint(_animalType)] += _count;
-        availablePetCount[uint(_animalType)] += _count;
+        totalPetCount[_animalType] += _count;
+        availablePetCount[_animalType] += _count;
         emit Added(_animalType, _count);
     }
 
@@ -61,7 +61,7 @@ contract PetPark {
             revert("Already adopted a pet");
         }
 
-        if (availablePetCount[uint(_animalType)] == 0) {
+        if (availablePetCount[_animalType] == 0) {
             revert("Selected animal not available");    
         }
 
@@ -74,7 +74,7 @@ contract PetPark {
         }
 
         borrowers[msg.sender] = Borrower(_gender, _age, _animalType);
-        availablePetCount[uint(_animalType)]--;
+        availablePetCount[_animalType]--;
 
         emit Borrowed(_animalType);
     }
@@ -83,11 +83,11 @@ contract PetPark {
         Borrower memory borrower = borrowers[msg.sender];
         require(borrower.age > 0, "No borrowed pets");
 
-        availablePetCount[uint(borrower.animalType)]++;
+        availablePetCount[borrower.animalType]++;
         emit Returned(borrower.animalType);
     }
 
     function animalCounts(AnimalType _animalType) public view returns (uint) {
-        return availablePetCount[uint(_animalType)];
+        return availablePetCount[_animalType];
     }
 }
